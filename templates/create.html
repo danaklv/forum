@@ -1,0 +1,90 @@
+
+
+{{ define "create" }}
+
+{{ template "header" }}
+{{ template "topheader" }}
+
+<style>
+    /* Стиль для модального окна */
+    .modal {
+        display: none; /* Скрыто по умолчанию */
+        position: relative; /* Оставаться на месте */
+        z-index: 121; /* Сверху всех окон */
+        left: 0;
+        top: 0;
+        width: 100%; /* Полная ширина */
+        height: 100%; /* Полная высота */
+        overflow: auto; /* Включить прокрутку, если нужно */
+        background-color: rgb(0,0,0); /* Черный цвет с прозрачностью */
+        background-color: rgba(0,0,0,0.4); /* Черный цвет с прозрачностью */
+    }
+
+    /* Стиль для содержимого модального окна */
+    .modal-content {
+        background-color: #000000;
+        margin: 15% auto; /* 15% от верхнего и нижнего края и центр */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%; /* Ширина 80% */
+    }
+
+    /* Стиль для кнопки закрытия */
+    .close {
+        color: #b41c1c;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>
+<div class="form-create">
+    <h3>Новый пост</h3>
+    <form action="/newpost" method="post">
+        <div class="input-create">
+            <input type="text" name="title" id="title" maxlength="50" required oninput="updateCharCount('title', 'title-count', 50)" placeholder="Тема поста"> <br>
+            <div id="title-count" class="char-count">Осталось 50 символов</div> <br>
+            
+            <textarea name="abstract" id="abstract" maxlength="300" required oninput="updateCharCount('abstract', 'abstract-count', 300)" placeholder="Напишите аннотацию"></textarea> <br>
+            <div id="abstract-count" class="char-count">Осталось 300 символов</div> <br>
+            
+            <textarea name="full_text" id="full_text" maxlength="4000" required oninput="updateCharCount('full_text', 'full_text-count', 4000)" placeholder="Введите текст поста"></textarea> <br>
+            <div id="full_text-count" class="char-count">Осталось 4000 символов</div> <br>
+
+            <script>
+                function updateCharCount(textareaId, countId, maxLength) {
+                    var textarea = document.getElementById(textareaId);
+                    var count = document.getElementById(countId);
+                    var remaining = maxLength - textarea.value.length;
+                    count.textContent = 'Осталось ' + remaining + ' символов';
+                }
+            </script>
+            
+            <label for="category">Категория:</label>
+            <select name="category" id="category">
+                <option value="All">All</option>
+                <option value="Sport">Sport</option>
+                <option value="Trends">Trends</option>
+                <option value="Humor">Humor</option>
+            </select> <br>
+            <button class="btn">Добавить</button>
+        </div>
+    </form>
+</div>
+
+<!-- Модальное окно -->
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <p style="color: red;">Для доступа к этому разделу нужно авторизоваться.</p>
+        <a href="/register" class="btn">Регистрация</a>
+    </div>
+</div>
+
+{{ end }}

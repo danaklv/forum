@@ -1,0 +1,37 @@
+{{ define "humor" }}
+
+{{ template "header"}}
+
+{{ template "topheader"}}
+
+{{ range . }}
+
+
+<div class="posts">
+    <h2>{{ .Title }}</h2>
+    <h4>{{ .Abstract }}</h4>
+    <div class="more">
+        <form action="/moreId" method="post">
+            <a href="/post?id={{ .Id }}" class="more-link">Read more ➞ </a>
+           
+        </form>
+    </div>
+    <div class="like-container">
+        <button type="button" class="like-button" data-post-id="{{ .Id }}"> 
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAsUlEQVR4nO2SwQnCQBBFH+LBMqxAbMACIgQvgl5zswQrsAhLsAsTPNuD8WIBnhJYmduwJMqSGVDww7/M7L63h4UvzQzIgZEHfAs0QAD21vCNgkuPlvB1BJfuPOEBmHvCn8B4KHzVA5eeLV5f98A/Ve5lGnRRy0rNw4DetCBeWgjCzwvu3oKDp6AFpp6Ck4Z7CBaegmsMtxYUKYI6Ef4AJl2CSh0q1TxLkMi/X3bB/+FdXlQTCqUh2JuTAAAAAElFTkSuQmCC">
+        </button>
+        <span class="like-count" data-post-id="{{ .Id }}"> {{ .Likes }} </span>
+        <button type="button" class="dislike-button" data-post-id="{{ .Id }}">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAoklEQVR4nO3SMQrCQBRF0QsJrsTCRrIFU7oDGwt3I1gL2UAqqyzF1kIQBIv0go0/VUAGJ2TCf2DhhV8NvNMM/EvIPq5vA7TB27d7AOspQDtivL87MEsFLPG2auCsBgxYqYFGDbyBhRIw4KgGbmrA1MB1LPCcOB79qmHVwNAShzKgjgB7D2AIueBYFkHmnkgOnAJg5wmEyAsoEJQDB6BUjP9eHSR05B+39/uOAAAAAElFTkSuQmCC">
+        </button>
+        <span class="dislike-count" data-post-id="{{ .Id }}"> {{ .Dislikes }} </span>
+    </div>
+</div>
+
+{{ else }}
+<h2>Пусто.....</p>
+
+{{ end }}
+
+
+{{end}}
