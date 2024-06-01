@@ -16,6 +16,7 @@ type Post struct {
 	Dislikes int64
 	UserId   int64
 	Abstract string
+    Username string
 }
 
 type Like struct {
@@ -23,11 +24,13 @@ type Like struct {
 	PostId int64
 	UserId int64
 }
+type PostPageData struct {
+	Post         Post
+	Comments     []Comment
+	CommentCount int
+}
 
 type Comment struct {
-	Id       int
-	PostId   int
-	UserId   int
 	Username string
 	Text     string
 }

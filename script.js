@@ -65,7 +65,43 @@ document.getElementById("reg-form").addEventListener("submit", function(event) {
 });
 
 
+document.getElementById("login-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    var xhr = new XMLHttpRequest(); 
+    var formData = new FormData(this);
+    formData.forEach((value, key) => {
+        console.log(key + ": " + value);
+    });
 
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/loginForm", true);
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // document.getElementById('loginBtn').style.display = 'none';
+                        // document.getElementById('exitBtn').style.display = 'inline';
+                        window.location.href = "/";
+                        
+                    } else {
+                        document.getElementById("err-message").innerText = response.error;
+                    }
+                } catch (e) {
+                    console.error("Error parsing JSON response: " + e);
+                    document.getElementById("error-message").innerText = "An unexpected error occurred";
+                }
+            } else {
+                console.error("Error during request: " + xhr.status);
+                document.getElementById("error-message").innerText = "An error occurred: " + xhr.status;
+            }
+        }
+    };
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    xhr.send(formData);
+});
 
 });
 

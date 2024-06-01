@@ -7,6 +7,7 @@ import (
 	"fr/models"
 	"net/http"
 	"sort"
+	"strings"
 	"text/template"
 
 	"github.com/gofrs/uuid"
@@ -39,24 +40,28 @@ func main() {
 	http.HandleFunc("/myposts", MyPostsHandler)
 	http.HandleFunc("/post", PostPageHandler)
 	http.HandleFunc("/likedposts", LikedPostsHandler)
+	http.HandleFunc("/addcomment", AddCommentHandler)
+	http.HandleFunc("/deletepost", DeletePostHandler)
+	http.HandleFunc("/it", ItPageHandler)
+
 	fmt.Println("http://localhost:8080/")
 	http.ListenAndServe(":8080", nil)
 
-	db, err := sql.Open("sqlite3", "./forum.db")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer db.Close()
+	// db, err := sql.Open("sqlite3", "./forum.db")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// defer db.Close()
 
-	statement, _ := db.Prepare("CREATE TABLE comments (id INTEGER PRIMARY KEY AUTOINCREMENT,post_id INTEGER NOT NULL,user_id INTEGER NOT NULL,text TEXT NOT NULL,FOREIGN KEY (post_id) REFERENCES posts(id),FOREIGN KEY (user_id) REFERENCES users(id));")
-	statement.Exec()
+	// // statement, _ := db.Prepare("CREATE TABLE comments (id INTEGER PRIMARY KEY AUTOINCREMENT,post_id INTEGER NOT NULL,user_id INTEGER NOT NULL,text TEXT NOT NULL,FOREIGN KEY (post_id) REFERENCES posts(id),FOREIGN KEY (user_id) REFERENCES users(id));")
+	// // statement.Exec()
 
-	_, err = db.Exec("DELETE FROM posts")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	// _, err = db.Exec("DELETE FROM sessions")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
 
 }
 
@@ -198,9 +203,8 @@ func SportPageHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
-		if post.Category == "Sport" {
+		if strings.Contains(post.Category, "Sport") {
 			posts = append(posts, post)
-
 		}
 
 	}
@@ -242,7 +246,8 @@ func TrendsPageHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("test")
 			return
 		}
-		if post.Category == "Trends" {
+
+		if strings.Contains(post.Category, "Trends") {
 			posts = append(posts, post)
 		}
 
@@ -285,7 +290,7 @@ func HumorPageHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
-		if post.Category == "Humor" {
+		if strings.Contains(post.Category, "Humor") {
 			posts = append(posts, post)
 		}
 
@@ -310,7 +315,8 @@ func NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	full_text := r.FormValue("full_text")
 	abstract := r.FormValue("abstract")
-	category := r.FormValue("category")
+	categories := r.Form["category"]
+	category := strings.Join(categories, ",")
 
 	if title != "" && full_text != "" && abstract != "" {
 		cookie, err := r.Cookie("session_id")
@@ -400,17 +406,16 @@ func FirstPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer database.Close()
 
-	res, err := database.Query("SELECT * FROM `posts`")
-
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	res, _ := database.Query("SELECT posts.*, users.username FROM posts INNER JOIN users ON posts.user_id = users.id")
 
 	posts = []models.Post{}
 	for res.Next() {
 		var post models.Post
-		err = res.Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract)
+		err = res.Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract, &post.Username)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -424,7 +429,36 @@ func FirstPageHandler(w http.ResponseWriter, r *http.Request) {
 		return i > j
 	})
 
-	tmpl.ExecuteTemplate(w, "index", posts)
+	err = tmpl.ExecuteTemplate(w, "index", posts)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// cookie, err := r.Cookie("session_id")
+	// if err != nil {
+	// 	var userID int64
+	// 	var username string
+	//     err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// 	err = database.QueryRow("SELECT username FROM users WHERE user_id = ?", userID).Scan(&username)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 		return
+	// 	}
+    //     err = tmpl.ExecuteTemplate(w, "topheader", username)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 		return
+	// 	}
+
+	// }
+	
+
+
 
 }
 
@@ -873,40 +907,40 @@ func MyPostsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func PostPageHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("templates/post.html", "templates/header.html")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+// func PostPageHandler(w http.ResponseWriter, r *http.Request) {
+// 	tmpl, err := template.ParseFiles("templates/post.html", "templates/header.html")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
 
-	id := r.URL.Query().Get("id")
-	if id == "" {
-		fmt.Println("no such id")
-		return
-	}
+// 	id := r.URL.Query().Get("id")
+// 	if id == "" {
+// 		fmt.Println("no such id")
+// 		return
+// 	}
 
-	database, err := sql.Open("sqlite3", "./forum.db")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer database.Close()
+// 	database, err := sql.Open("sqlite3", "./forum.db")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// 	defer database.Close()
 
-	var post models.Post
-	err = database.QueryRow("SELECT * FROM posts WHERE Id = ?", id).Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			fmt.Println("post not found")
-			return
-		} else {
-			fmt.Println(err)
-		}
-		return
-	}
+// 	var post models.Post
+// 	err = database.QueryRow("SELECT * FROM posts WHERE Id = ?", id).Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract)
+// 	if err != nil {
+// 		if err == sql.ErrNoRows {
+// 			fmt.Println("post not found")
+// 			return
+// 		} else {
+// 			fmt.Println(err)
+// 		}
+// 		return
+// 	}
 
-	tmpl.ExecuteTemplate(w, "post", post)
-}
+// 	tmpl.ExecuteTemplate(w, "post", post)
+// }
 
 func LikedPostsHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
@@ -971,3 +1005,304 @@ func LikedPostsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// func AddCommentHandler(w http.ResponseWriter, r *http.Request) {
+// 	if r.Method != http.MethodPost {
+// 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+// 		return
+// 	}
+
+// 	cookie, err := r.Cookie("session_id")
+// 	if err != nil {
+// 		http.Redirect(w, r, "/notauthenticated", http.StatusSeeOther)
+// 		return
+// 	}
+
+// 	// Подключаемся к базе данных
+// 	database, err := sql.Open("sqlite3", "./forum.db")
+// 	if err != nil {
+// 		fmt.Println("Ошибка при открытии базы данных:", err)
+// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 		return
+// 	}
+// 	defer database.Close()
+
+// 	var userID int
+// 	err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+// 	if err != nil {
+// 		http.Error(w, "Ошибка авторизации", http.StatusUnauthorized)
+// 		return
+// 	}
+
+// 	postID := r.FormValue("post_id")
+// 	commentText := r.FormValue("comment")
+
+// 	_, err = database.Exec("INSERT INTO comment (post_id, user_id, text) VALUES (?, ?, ?)", postID, userID, commentText)
+// 	if err != nil {
+// 		fmt.Println("Ошибка при добавлении комментария:", err)
+// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	http.Redirect(w, r, fmt.Sprintf("/post/%s", postID), http.StatusSeeOther)
+// }
+
+// func PostPageHandler(w http.ResponseWriter, r *http.Request) {
+// 	tmpl, err := template.ParseFiles("templates/post.html", "templates/header.html")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	id := r.URL.Query().Get("id")
+// 	if id == "" {
+// 		http.Error(w, "Bad Request", http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	database, err := sql.Open("sqlite3", "./forum.db")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 		return
+// 	}
+// 	defer database.Close()
+
+// 	var post models.Post
+// 	err = database.QueryRow("SELECT * FROM posts WHERE Id = ?", id).Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract)
+// 	if err != nil {
+// 		if err == sql.ErrNoRows {
+// 			http.Error(w, "Not Found", http.StatusNotFound)
+// 			return
+// 		} else {
+// 			fmt.Println(err)
+// 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 			return
+// 		}
+// 	}
+
+// 	// Загрузка комментариев
+// 	rows, err := database.Query("SELECT users.username, comment.text FROM comment JOIN users ON comment.user_id = users.id WHERE post_id = ?", post.Id)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 		return
+// 	}
+// 	defer rows.Close()
+
+// 	var comments []models.Comment
+// 	for rows.Next() {
+// 		var comment models.Comment
+// 		err := rows.Scan(&comment.Username, &comment.Text)
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 			return
+// 		}
+// 		comments = append(comments, comment)
+// 	}
+
+// 	data := models.PostPageData{
+// 		Post:     post,
+// 		Comments: comments,
+// 	}
+
+// 	err = tmpl.ExecuteTemplate(w, "post", data)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+// 	}
+// }
+
+func AddCommentHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Redirect(w, r, "/notauthenticated", http.StatusSeeOther)
+		return
+	}
+
+	database, err := sql.Open("sqlite3", "./forum.db")
+	if err != nil {
+		fmt.Println("Ошибка при открытии базы данных:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer database.Close()
+
+	var userID int
+	err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+	if err != nil {
+		http.Error(w, "Ошибка авторизации", http.StatusUnauthorized)
+		return
+	}
+
+	postID := r.FormValue("post_id")
+	commentText := r.FormValue("comment")
+
+	_, err = database.Exec("INSERT INTO comment (post_id, user_id, text) VALUES (?, ?, ?)", postID, userID, commentText)
+	if err != nil {
+		fmt.Println("Ошибка при добавлении комментария:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/post?id=%s", postID), http.StatusSeeOther)
+}
+
+func DeletePostHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Redirect(w, r, "/notauthenticated", http.StatusSeeOther)
+		return
+	}
+
+	database, err := sql.Open("sqlite3", "./forum.db")
+	if err != nil {
+		fmt.Println("Ошибка при открытии базы данных:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer database.Close()
+
+	var userID int
+	err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+	if err != nil {
+		http.Error(w, "Ошибка авторизации", http.StatusUnauthorized)
+		return
+	}
+
+	postID := r.FormValue("post_id")
+	_, err = database.Exec("DELETE FROM posts WHERE id = ? AND user_id = ?", postID, userID)
+	if err != nil {
+		fmt.Println("Ошибка при удалении поста:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/myposts", http.StatusSeeOther)
+}
+
+func PostPageHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("templates/post.html", "templates/header.html")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	database, err := sql.Open("sqlite3", "./forum.db")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer database.Close()
+
+	var post models.Post
+	err = database.QueryRow("SELECT * FROM posts WHERE Id = ?", id).Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		} else {
+			fmt.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Загрузка комментариев
+	rows, err := database.Query("SELECT users.username, comment.text FROM comment JOIN users ON comment.user_id = users.id WHERE post_id = ?", post.Id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var comments []models.Comment
+	for rows.Next() {
+		var comment models.Comment
+		err := rows.Scan(&comment.Username, &comment.Text)
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		comments = append(comments, comment)
+	}
+
+	// Подсчет количества комментариев
+	commentCount := len(comments)
+
+	data := models.PostPageData{
+		Post:         post,
+		Comments:     comments,
+		CommentCount: commentCount,
+	}
+
+	err = tmpl.ExecuteTemplate(w, "post", data)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+func ItPageHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("templates/it.html", "templates/header.html", "templates/topheader.html")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	database, err := sql.Open("sqlite3", "./forum.db")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer database.Close()
+
+	res, err := database.Query("SELECT * FROM `posts`")
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	posts = []models.Post{}
+	for res.Next() {
+		var post models.Post
+		err = res.Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract)
+		if err != nil {
+			fmt.Println("test1")
+			fmt.Println(err)
+			return
+		}
+		if strings.Contains(post.Category, "IT") {
+			posts = append(posts, post)
+		}
+
+	}
+	sort.Slice(posts, func(i, j int) bool {
+
+		return i > j
+	})
+
+	tmpl.ExecuteTemplate(w, "it", posts)
+}

@@ -40,6 +40,15 @@ body {
 }
 
 
+.posts h3 {
+    position: relative;
+    top: -24px;
+    left: 30px;
+    font-size: 1.1em; /* Размер шрифта */
+    color: #000000; /* Цвет текста */
+    margin: 0;
+}
+
 .page {
     position: relative;
     width: 100%;
@@ -423,7 +432,7 @@ header .loginBtn:hover {
 
 
  .post {
-  
+
     margin: 185px 0; 
     padding: 20px;
     border: 1px solid #ccc; 
@@ -449,20 +458,24 @@ header .loginBtn:hover {
     margin: 0;
 }
 
+
 .post-page {
-    border: 3px solid black;
+    background-color: rgba(241, 241, 241, 0.737);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.385); 
     position: relative;
     width: 40%;
 } 
 
 .comments-section {
    position: relative;
+   top: -100px;
+
 
 }
 
 .comments-section h3 {
     font-size: 20px;
-    margin-bottom: 10px;
+    margin-bottom: 30px;
 }
 
 #comments-list {
@@ -472,7 +485,7 @@ header .loginBtn:hover {
 }
 
 #comments-list li {
-    background-color: #f0f0f0;
+    background-color: #eaeaea;
     padding: 10px;
     border-radius: 5px;
     margin-bottom: 10px;
@@ -501,16 +514,17 @@ header .loginBtn:hover {
 #comment-form button {
     align-self: flex-end;
     padding: 10px 20px;
-    background-color: #4CAF50;
+    background-color: #000000;
     color: #fff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
+    margin-right: 20px;
 }
 
 #comment-form button:hover {
-    background-color: #45a049;
+    background-color: #000000b8;
 }
 
 .more-link {
@@ -534,4 +548,19 @@ header .loginBtn:hover {
     margin: 0;
     line-height: 1.5;
     letter-spacing: 0.5px; 
+}
+
+
+.delete-post {
+    color: white;
+    background-color: #000;
+}
+.Kategory {
+    margin-bottom: 2%;
+}
+.checkboxes label {
+    display: block; 
+    margin-bottom: 2%;
+  
+    
 }
