@@ -15,8 +15,7 @@ import (
 )
 
 var posts = []models.Post{}
-var myPosts = []models.Post{}
-var likedPosts = []models.Post{}
+var cook string
 var WrongPassword = false
 var WrongLogin = false
 
@@ -54,8 +53,8 @@ func main() {
 	// }
 	// defer db.Close()
 
-	// // statement, _ := db.Prepare("CREATE TABLE comments (id INTEGER PRIMARY KEY AUTOINCREMENT,post_id INTEGER NOT NULL,user_id INTEGER NOT NULL,text TEXT NOT NULL,FOREIGN KEY (post_id) REFERENCES posts(id),FOREIGN KEY (user_id) REFERENCES users(id));")
-	// // statement.Exec()
+	// // // // statement, _ := db.Prepare("CREATE TABLE comments (id INTEGER PRIMARY KEY AUTOINCREMENT,post_id INTEGER NOT NULL,user_id INTEGER NOT NULL,text TEXT NOT NULL,FOREIGN KEY (post_id) REFERENCES posts(id),FOREIGN KEY (user_id) REFERENCES users(id));")
+	// // // // statement.Exec()
 
 	// _, err = db.Exec("DELETE FROM sessions")
 	// if err != nil {
@@ -65,112 +64,218 @@ func main() {
 
 }
 
+// func loginFormHandler(w http.ResponseWriter, r *http.Request) {
+
+// 	WrongLogin = false
+// 	WrongPassword = false
+
+// 	// Открываем соединение с базой данных
+// 	database, err1 := sql.Open("sqlite3", "./forum.db")
+// 	if err1 != nil {
+// 		fmt.Println(err1)
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 		return
+// 	}
+// 	defer database.Close()
+
+// 	email := r.FormValue("email")
+// 	password := r.FormValue("password")
+
+// 	// Объединяем проверку email, password и получение user_id в один запрос
+// 	var dbPassword string
+// 	var userID int64
+// 	err := database.QueryRow("SELECT id, password FROM users WHERE email = ?", email).Scan(&userID, &dbPassword)
+// 	if err == sql.ErrNoRows {
+// 		fmt.Println("no such user")
+// 		json.NewEncoder(w).Encode(map[string]string{"error": "No such user"})
+// 		return
+// 	} else if err != nil {
+// 		fmt.Println(err)
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 		return
+// 	}
+
+// 	// Проверка пароля
+// 	if password != dbPassword {
+// 		WrongPassword = true
+// 		fmt.Println("wrong password")
+// 		json.NewEncoder(w).Encode(map[string]string{"error": "Wrong password"})
+// 		return
+// 	}
+
+// 	// Генерация нового session ID
+// 	sessionID, err := uuid.NewV4()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 		return
+// 	}
+
+// 	// Проверка существующей сессии
+// 	var existingSessionID string
+// 	err = database.QueryRow("SELECT cookie FROM sessions WHERE user_id = ?", userID).Scan(&existingSessionID)
+// 	if err != nil && err != sql.ErrNoRows {
+// 		fmt.Println(err)
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 		return
+// 	}
+
+// 	fmt.Println("session ----- ", existingSessionID)
+
+// 	// Если сессия существует, обновляем её, иначе создаем новую
+// 	if existingSessionID == "" {
+// 		stmt, err := database.Prepare("INSERT INTO sessions(user_id, cookie) VALUES(?, ?)")
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 			return
+// 		}
+// 		_, err = stmt.Exec(userID, sessionID.String())
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 			return
+// 		}
+// 	} else {
+// 		stmt, err := database.Prepare("UPDATE sessions SET cookie = ? WHERE user_id = ?")
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 			return
+// 		}
+// 		_, err = stmt.Exec(sessionID.String(), userID)
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			w.WriteHeader(http.StatusInternalServerError)
+// 			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+// 			return
+// 		}
+// 	}
+
+// 	// Установка cookie в ответе
+// 	cookie := http.Cookie{
+// 		Name:  "session_id",
+// 		Value: sessionID.String(),
+// 		Path:  "/",
+// 	}
+// 	if len(cook) == 0 {
+// 		cook = cookie.Value
+// 	}
+// 	fmt.Println("-----------------")
+// 	fmt.Println(cook)
+// 	fmt.Println("-----------------")
+// 	http.SetCookie(w, &cookie)
+
+// 	json.NewEncoder(w).Encode(map[string]string{"success": "login successful"})
+
+// }
 func loginFormHandler(w http.ResponseWriter, r *http.Request) {
+    // Проверяем наличие сессии с текущим user_id
+    database, err := sql.Open("sqlite3", "./forum.db")
+    if err != nil {
+        fmt.Println(err)
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+        return
+    }
+    defer database.Close()
 
-	WrongLogin = false
-	WrongPassword = false
+    email := r.FormValue("email")
+    password := r.FormValue("password")
 
-	// Открываем соединение с базой данных
-	database, err1 := sql.Open("sqlite3", "./forum.db")
-	if err1 != nil {
-		fmt.Println(err1)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-		return
-	}
-	defer database.Close()
+    var dbPassword string
+    var userID int64
+    err = database.QueryRow("SELECT id, password FROM users WHERE email = ?", email).Scan(&userID, &dbPassword)
+    if err == sql.ErrNoRows {
+        fmt.Println("no such user")
+        json.NewEncoder(w).Encode(map[string]string{"error": "No such user"})
+        return
+    } else if err != nil {
+        fmt.Println(err)
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+        return
+    }
 
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+    if password != dbPassword {
+        // Неверный пароль
+        json.NewEncoder(w).Encode(map[string]string{"error": "Wrong password"})
+        return
+    }
 
-	// Объединяем проверку email, password и получение user_id в один запрос
-	var dbPassword string
-	var userID int64
-	err := database.QueryRow("SELECT id, password FROM users WHERE email = ?", email).Scan(&userID, &dbPassword)
-	if err == sql.ErrNoRows {
-		fmt.Println("no such user")
-		json.NewEncoder(w).Encode(map[string]string{"error": "No such user"})
-		return
-	} else if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-		return
-	}
+    // Проверяем существующую сессию
+    var existingSessionID string
+    err = database.QueryRow("SELECT cookie FROM sessions WHERE user_id = ?", userID).Scan(&existingSessionID)
+    if err != nil && err != sql.ErrNoRows {
+        fmt.Println(err)
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+        return
+    }
 
-	// Проверка пароля
-	if password != dbPassword {
-		WrongPassword = true
-		fmt.Println("wrong password")
-		json.NewEncoder(w).Encode(map[string]string{"error": "Wrong password"})
-		return
-	}
+    if existingSessionID != "" {
+        // Если сессия существует, удаляем ее
+        stmt, err := database.Prepare("DELETE FROM sessions WHERE user_id = ?")
+        if err != nil {
+            fmt.Println(err)
+            w.WriteHeader(http.StatusInternalServerError)
+            json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+            return
+        }
+        _, err = stmt.Exec(userID)
+        if err != nil {
+            fmt.Println(err)
+            w.WriteHeader(http.StatusInternalServerError)
+            json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+            return
+        }
+    }
 
-	// Генерация нового session ID
-	sessionID, err := uuid.NewV4()
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-		return
-	}
+    // Создаем новую сессию
+    sessionID, err := uuid.NewV4()
+    if err != nil {
+        fmt.Println(err)
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+        return
+    }
 
-	// Проверка существующей сессии
-	var existingSessionID string
-	err = database.QueryRow("SELECT cookie FROM sessions WHERE user_id = ?", userID).Scan(&existingSessionID)
-	if err != nil && err != sql.ErrNoRows {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-		return
-	}
+    stmt, err := database.Prepare("INSERT INTO sessions(user_id, cookie) VALUES(?, ?)")
+    if err != nil {
+        fmt.Println(err)
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+        return
+    }
+    _, err = stmt.Exec(userID, sessionID.String())
+    if err != nil {
+        fmt.Println(err)
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
+        return
+    }
 
-	fmt.Println("session ----- ", existingSessionID)
+    // Установка cookie в ответе
+    cookie := http.Cookie{
+        Name:  "session_id",
+        Value: sessionID.String(),
+        Path:  "/",
+    }
+    http.SetCookie(w, &cookie)
 
-	// Если сессия существует, обновляем её, иначе создаем новую
-	if existingSessionID == "" {
-		stmt, err := database.Prepare("INSERT INTO sessions(user_id, cookie) VALUES(?, ?)")
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-			return
-		}
-		_, err = stmt.Exec(userID, sessionID.String())
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-			return
-		}
-	} else {
-		stmt, err := database.Prepare("UPDATE sessions SET cookie = ? WHERE user_id = ?")
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-			return
-		}
-		_, err = stmt.Exec(sessionID.String(), userID)
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
-			return
-		}
-	}
-
-	// Установка cookie в ответе
-	cookie := http.Cookie{
-		Name:  "session_id",
-		Value: sessionID.String(),
-		Path:  "/",
-	}
-	http.SetCookie(w, &cookie)
-
+ 
+	
 	json.NewEncoder(w).Encode(map[string]string{"success": "login successful"})
-
 }
+
+
 
 func SportPageHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("templates/sport.html", "templates/header.html", "templates/topheader.html")
@@ -213,7 +318,33 @@ func SportPageHandler(w http.ResponseWriter, r *http.Request) {
 		return i > j
 	})
 
-	tmpl.ExecuteTemplate(w, "sport", posts)
+	var username string
+    cookie, err := r.Cookie("session_id")
+    if err == nil {
+        var userID int64
+        err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+        if err == nil {
+            err = database.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&username)
+            if err != nil {
+                fmt.Println(err)
+            }
+        } else {
+            fmt.Println(err)
+        }
+    } else {
+        fmt.Println("Ошибка при получении cookie:", err)
+    }
+
+    pageData := models.PageData{
+        Username: username,
+        Posts:    posts,
+    }
+
+    err = tmpl.ExecuteTemplate(w, "sport", pageData)
+    if err != nil {
+        fmt.Println(err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 }
 
 func TrendsPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +388,12 @@ func TrendsPageHandler(w http.ResponseWriter, r *http.Request) {
 		return i > j
 	})
 
-	tmpl.ExecuteTemplate(w, "trends", posts)
+	
+    err = tmpl.ExecuteTemplate(w, "trends", posts)
+    if err != nil {
+        fmt.Println(err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 }
 
 func HumorPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -300,7 +436,12 @@ func HumorPageHandler(w http.ResponseWriter, r *http.Request) {
 		return i > j
 	})
 
-	tmpl.ExecuteTemplate(w, "humor", posts)
+	err = tmpl.ExecuteTemplate(w, "humor", posts)
+
+    if err != nil {
+        fmt.Println(err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 }
 
 func NewPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -320,7 +461,7 @@ func NewPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	if title != "" && full_text != "" && abstract != "" {
 		cookie, err := r.Cookie("session_id")
-		if err != nil {
+		if err != nil || cookie.Value != cook {
 			fmt.Println("Ошибка получения куки:", err)
 			http.Error(w, "Ошибка авторизации", http.StatusUnauthorized)
 			return
@@ -392,74 +533,134 @@ func ScriptHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "script.js")
 }
 
+// func FirstPageHandler(w http.ResponseWriter, r *http.Request) {
+// 	tmpl, err := template.ParseFiles("templates/index.html", "templates/header.html", "templates/topheader.html")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+
+// 	database, err := sql.Open("sqlite3", "./forum.db")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// 	defer database.Close()
+
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// 	res, _ := database.Query("SELECT posts.*, users.username FROM posts INNER JOIN users ON posts.user_id = users.id")
+
+// 	posts = []models.Post{}
+// 	for res.Next() {
+// 		var post models.Post
+// 		err = res.Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract, &post.Username)
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			return
+// 		}
+
+// 		posts = append(posts, post)
+
+// 	}
+// 	sort.Slice(posts, func(i, j int) bool {
+
+// 		return i > j
+// 	})
+
+
+// 	err = tmpl.ExecuteTemplate(w, "index", posts)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	cookie, err := r.Cookie("session_id")
+// 	if err != nil {
+// 		var userID int64
+// 		var username string
+// 	    err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+// 		if err != nil {
+// 			http.Error(w, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		err = database.QueryRow("SELECT username FROM users WHERE user_id = ?", userID).Scan(&username)
+// 		if err != nil {
+// 			http.Error(w, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 		_ = tmpl.ExecuteTemplate(w, "index", username)
+
+// 	}
+
+// }
+
 func FirstPageHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("templates/index.html", "templates/header.html", "templates/topheader.html")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+    tmpl, err := template.ParseFiles("templates/index.html", "templates/header.html", "templates/topheader.html")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
 
-	database, err := sql.Open("sqlite3", "./forum.db")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer database.Close()
+    database, err := sql.Open("sqlite3", "./forum.db")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    defer database.Close()
 
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	res, _ := database.Query("SELECT posts.*, users.username FROM posts INNER JOIN users ON posts.user_id = users.id")
+    res, err := database.Query("SELECT posts.*, users.username FROM posts INNER JOIN users ON posts.user_id = users.id")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    defer res.Close()
 
-	posts = []models.Post{}
-	for res.Next() {
-		var post models.Post
-		err = res.Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract, &post.Username)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+    posts := []models.Post{}
+    for res.Next() {
+        var post models.Post
+        err = res.Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract, &post.Username)
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+        posts = append(posts, post)
+    }
 
-		posts = append(posts, post)
+    sort.Slice(posts, func(i, j int) bool {
+        return i > j
+    })
 
-	}
-	sort.Slice(posts, func(i, j int) bool {
+    var username string
+    cookie, err := r.Cookie("session_id")
+    if err == nil {
+        var userID int64
+        err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+        if err == nil {
+            err = database.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&username)
+            if err != nil {
+                fmt.Println(err)
+            }
+        } else {
+            fmt.Println(err)
+        }
+    } else {
+        fmt.Println("Ошибка при получении cookie:", err)
+    }
 
-		return i > j
-	})
+    pageData := models.PageData{
+        Username: username,
+        Posts:    posts,
+    }
 
-	err = tmpl.ExecuteTemplate(w, "index", posts)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// cookie, err := r.Cookie("session_id")
-	// if err != nil {
-	// 	var userID int64
-	// 	var username string
-	//     err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// 	err = database.QueryRow("SELECT username FROM users WHERE user_id = ?", userID).Scan(&username)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 		return
-	// 	}
-    //     err = tmpl.ExecuteTemplate(w, "topheader", username)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 		return
-	// 	}
-
-	// }
-	
-
-
-
+    err = tmpl.ExecuteTemplate(w, "index", pageData)
+    if err != nil {
+        fmt.Println(err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 }
 
 func LoginHadnler(w http.ResponseWriter, r *http.Request) {
@@ -1303,6 +1504,11 @@ func ItPageHandler(w http.ResponseWriter, r *http.Request) {
 
 		return i > j
 	})
+	
 
-	tmpl.ExecuteTemplate(w, "it", posts)
+    err = tmpl.ExecuteTemplate(w, "it", posts)
+    if err != nil {
+        fmt.Println(err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 }

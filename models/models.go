@@ -34,3 +34,8 @@ type Comment struct {
 	Username string
 	Text     string
 }
+
+type PageData struct {
+    Username string
+    Posts    []Post
+}

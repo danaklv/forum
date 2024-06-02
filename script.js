@@ -26,82 +26,59 @@ iconClose.addEventListener('click', ()=> {
 });
 
 
-document.getElementById("reg-form").addEventListener("submit", function(event) {
-    event.preventDefault();
-    var xhr = new XMLHttpRequest(); 
-    var formData = new FormData(this);
-    formData.forEach((value, key) => {
-        console.log(key + ": " + value);
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Inline script executed");
 
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/register", true);
+    const regForm = document.getElementById("reg-form");
+    console.log("Registration form:", regForm);
 
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        // document.getElementById('loginBtn').style.display = 'none';
-                        // document.getElementById('exitBtn').style.display = 'inline';
-                        window.location.href = "/";
-                        
+    if (regForm) {
+        regForm.addEventListener("submit", function(event) {
+            console.log("Form submitted");
+
+            event.preventDefault();
+            event.stopPropagation(); // остановить дальнейшую обработку событий
+
+            // Disable the submit button to prevent multiple submissions
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            var formData = new FormData(this);
+            formData.forEach((value, key) => {
+                console.log(key + ": " + value);
+            });
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/register", true);
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    submitButton.disabled = false; // Re-enable the submit button
+
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                window.location.href = "/";
+                            } else {
+                                document.getElementById("err-message").innerText = response.error;
+                            }
+                        } catch (e) {
+                            console.error("Error parsing JSON response: " + e);
+                            document.getElementById("err-message").innerText = "An unexpected error occurred";
+                        }
                     } else {
-                        document.getElementById("err-message").innerText = response.error;
+                        console.error("Error during request: " + xhr.status);
+                        document.getElementById("err-message").innerText = "An error occurred: " + xhr.status;
                     }
-                } catch (e) {
-                    console.error("Error parsing JSON response: " + e);
-                    document.getElementById("error-message").innerText = "An unexpected error occurred";
                 }
-            } else {
-                console.error("Error during request: " + xhr.status);
-                document.getElementById("error-message").innerText = "An error occurred: " + xhr.status;
-            }
-        }
-    };
-    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-    xhr.send(formData);
+            };
+            xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            xhr.send(formData);
+        }, { once: true });
+    }
 });
 
-
-document.getElementById("login-form").addEventListener("submit", function(event) {
-    event.preventDefault();
-    var xhr = new XMLHttpRequest(); 
-    var formData = new FormData(this);
-    formData.forEach((value, key) => {
-        console.log(key + ": " + value);
-    });
-
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/loginForm", true);
-
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        // document.getElementById('loginBtn').style.display = 'none';
-                        // document.getElementById('exitBtn').style.display = 'inline';
-                        window.location.href = "/";
-                        
-                    } else {
-                        document.getElementById("err-message").innerText = response.error;
-                    }
-                } catch (e) {
-                    console.error("Error parsing JSON response: " + e);
-                    document.getElementById("error-message").innerText = "An unexpected error occurred";
-                }
-            } else {
-                console.error("Error during request: " + xhr.status);
-                document.getElementById("error-message").innerText = "An error occurred: " + xhr.status;
-            }
-        }
-    };
-    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-    xhr.send(formData);
-});
 
 });
 

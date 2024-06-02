@@ -9,11 +9,66 @@
     <link rel="icon" href="https://icons8.ru/icon/PnGqCiGjfpSQ/people-working-together" type="image/x-icon">
     <link rel="stylesheet" href="style.css">
     <title>Forum</title>
+    <style>
+.dropbtn {
+    position: fixed;
+    background-color: #f5f5f5;
+    font-family: 'Poppins', sans-serif;
+    color: rgb(0, 0, 0);
+    padding: 16px;
+    font-size: 1.5em;
+    border: none;
+    border-radius:5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #c8c8c8a8;
+}
+
+.dropdown {
+    top: 30px;
+    left: 1700px;
+    z-index: 1;
+
+
+}
+.dropdown-content {
+    position: fixed;
+    background-color: #f1f1f1;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    top: 96px; /* Измените это значение в соответствии с вашим дизайном */
+    left: 5px; 
+    z-index: 1;
+
+}
+.dropdown-content a {
+    color: rgba(0, 0, 0, 0.399);
+    padding: 12px 16px;
+    text-decoration: none;
+
+}
+
+.dropdown a:hover {background-color: #ddd;}
+
+.show {display: block;}
+    </style>
 </head>
 <body>
-    {{ template "header" }}
-    {{ template "topheader" }}
-    {{ range . }}
+    
+    {{ template "header" . }}
+    {{ template "topheader" . }}
+    <div class="dropdown">
+        <button onclick="myFunction()" class="dropbtn">{{ .Username }}</button>
+          <div id="myDropdown" class="dropdown-content">
+            <a href="/myposts">My posts</a>
+            <a href="/likedposts">Liked Posts</a>
+            <a href="/create">Create Post</a>
+            <a href="/exit">Exit</a>
+          </div>
+        </div>
+    {{ range .Posts }}
     <div class="posts">
         <img width="24" height="24" src="https://img.icons8.com/material-rounded/24/writer-male.png" alt="writer-male"/>  <h3>{{ .Username }}</h3>
         <h2>{{ .Title }}</h2>
@@ -21,7 +76,6 @@
         <div class="more">
             <form action="/moreId" method="post">
                 <a href="/post?id={{ .Id }}" class="more-link">Read more ➞ </a>
-               
             </form>
         </div>
         <div class="like-container">
@@ -35,12 +89,36 @@
             <span class="dislike-count" data-post-id="{{ .Id }}"> {{ .Dislikes }} </span>
             <span class="comments" data-post-id="{{ .Id }}"> <img width="48" height="48" src="https://img.icons8.com/sf-regular-filled/48/comments.png" alt="comments"/> </span>
         </div>
-
-       
     </div>
     {{ else }}
     <p>Пусто...</p>
     {{ end }}
+
+    <script>
+        /* When the user clicks on the button, 
+        toggle between hiding and showing the dropdown content */
+        function myFunction() {
+            document.getElementById("myDropdown").classList.toggle("show");
+        }
+        
+        // Close the dropdown if the user clicks outside of it
+        window.onclick = function(event) {
+          if (!event.target.matches('.dropbtn')) {
+        
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            var i;
+            for (i = 0; i < dropdowns.length; i++) {
+              var openDropdown = dropdowns[i];
+              if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+              }
+            }
+          }
+        }
+        </script>
+
+
+
 </body>
 </html>
 {{ end }}

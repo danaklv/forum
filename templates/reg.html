@@ -34,52 +34,55 @@
              </div>
          </form>
      </div>
+     
      <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("Inline script executed");
+    console.log("Inline script executed");
 
-            const loginForm = document.getElementById("login-form");
-            console.log("Login form:", loginForm);
+    const loginForm = document.getElementById("login-form");
+    console.log("Login form:", loginForm);
 
-            if (loginForm) {
-                loginForm.addEventListener("submit", function(event) {
-                    console.log("Form submitted");
+    if (loginForm) {
+        loginForm.addEventListener("submit", function(event) {
+            console.log("Form submitted");
 
-                    event.preventDefault();
+            event.preventDefault();
+            event.stopPropagation(); // добавьте это, чтобы остановить дальнейшую обработку событий
 
-                    // Disable the submit button to prevent multiple submissions
-                    const submitButton = this.querySelector('button[type="submit"]');
-                    submitButton.disabled = true;
+            // Disable the submit button to prevent multiple submissions
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
 
-                    var formData = new FormData(this);
-                    var xhr = new XMLHttpRequest();
+            var formData = new FormData(this);
+            var xhr = new XMLHttpRequest();
 
-                    xhr.open("POST", "/loginForm", true);
+            xhr.open("POST", "/loginForm", true);
 
-                    xhr.onreadystatechange = function() {
-                        if (xhr.readyState === XMLHttpRequest.DONE) {
-                            submitButton.disabled = false; // Re-enable the submit button
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    submitButton.disabled = false; // Re-enable the submit button
 
-                            if (xhr.status === 200) {
-                                var response = JSON.parse(xhr.responseText);
-                                console.log("Response received:", response);
-                                if (response.success) {
-                                    window.location.href = "/";
-                                } else {
-                                    document.getElementById("error-message").innerText = response.error;
-                                }
-                            } else {
-                                console.error("Ошибка при выполнении запроса: " + xhr.status);
-                            }
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        console.log("Response received:", response);
+                        if (response.success) {
+                            window.location.href = "/";
+                        } else {
+                            document.getElementById("error-message").innerText = response.error;
                         }
-                    };
-                    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                    xhr.send(formData);
-                }, { once: true });
-            }
-        });
-    </script>
+                    } else {
+                        console.error("Ошибка при выполнении запроса: " + xhr.status);
+                    }
+                }
+            };
+            xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            xhr.send(formData);
+        }, { once: true });
+    }
+});
 
+     </script>
+    
      <div class="form-box register">
         <h3>Registration</h3>
         <form action="/register" id="reg-form" method="POST">
