@@ -28,7 +28,7 @@
 }
 
 .dropdown {
-    top: 30px;
+    top: 20px;
     left: 1700px;
     z-index: 1;
 
@@ -87,7 +87,7 @@
                 <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAoklEQVR4nO3SMQrCQBRF0QsJrsTCRrIFU7oDGwt3I1gL2UAqqyzF1kIQBIv0go0/VUAGJ2TCf2DhhV8NvNMM/EvIPq5vA7TB27d7AOspQDtivL87MEsFLPG2auCsBgxYqYFGDbyBhRIw4KgGbmrA1MB1LPCcOB79qmHVwNAShzKgjgB7D2AIueBYFkHmnkgOnAJg5wmEyAsoEJQDB6BUjP9eHSR05B+39/uOAAAAAElFTkSuQmCC">
             </button>
             <span class="dislike-count" data-post-id="{{ .Id }}"> {{ .Dislikes }} </span>
-            <span class="comments" data-post-id="{{ .Id }}"> <img width="48" height="48" src="https://img.icons8.com/sf-regular-filled/48/comments.png" alt="comments"/> </span>
+            <img  width="48" height="48" src="https://img.icons8.com/sf-regular-filled/48/comments.png" style="position: relative; left: 30px; top: -4px;" alt="comments"/>   <span class="comments" data-post-id="{{ .Id }}" style="position: relative; top: -4px;"> {{ .CommentsCount }}</span>
         </div>
     </div>
     {{ else }}

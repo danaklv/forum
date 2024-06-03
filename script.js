@@ -157,3 +157,80 @@ function sendDislikeRequest(postID, button) {
     };
     xhr.send(`post_id=${postID}`);
 }
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.like-comment-button').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (!this.classList.contains('loading')) {
+                var commentID = this.getAttribute('data-comment-id');
+                sendLikeRequest(commentID, this);
+                this.classList.add('loading');
+            }
+        });
+    });
+
+    document.querySelectorAll('.dislike-comment-button').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (!this.classList.contains('loading')) {
+                var commentID = this.getAttribute('data-comment-id');
+                sendDislikeRequest(commentID, this);
+                this.classList.add('loading');
+            }
+        });
+    });
+});
+
+function sendLikeRequest(commentID, button) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/likecomment", true); // Поменяйте путь на ваш роут для лайков комментариев
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                document.querySelector(`.like-count[data-comment-id='${commentID}']`).innerText = response.likes;
+                button.classList.toggle('liked', !button.classList.contains('liked'));
+                document.querySelector(`.dislike-count[data-comment-id='${commentID}']`).innerText = response.dislikes;
+
+                if (!button.classList.contains('liked')) {
+                    document.querySelector(`.dislike-comment-button[data-comment-id='${commentID}']`).classList.remove('disliked');
+                }
+            } else if (xhr.status == 401) {
+                window.location.href = "/notauthenticated";
+            } else {
+                console.error("Error during request: " + xhr.status);
+            }
+            button.classList.remove('loading');
+        }
+    };
+    xhr.send(`comment_id=${commentID}`);
+}
+
+function sendDislikeRequest(commentID, button) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/dislikecomment", true); // Поменяйте путь на ваш роут для дизлайков комментариев
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                document.querySelector(`.like-count[data-comment-id='${commentID}']`).innerText = response.likes;
+                document.querySelector(`.dislike-count[data-comment-id='${commentID}']`).innerText = response.dislikes;
+                button.classList.toggle('disliked', !button.classList.contains('disliked'));
+                if (!button.classList.contains('disliked')) {
+                    document.querySelector(`.like-comment-button[data-comment-id='${commentID}']`).classList.remove('liked');
+                }
+            } else if (xhr.status == 401) {
+                window.location.href = "/notauthenticated";
+            } else {
+                console.error("Error during request: " + xhr.status);
+            }
+            button.classList.remove('loading');
+        }
+    };
+    xhr.send(`comment_id=${commentID}`);
+}

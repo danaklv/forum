@@ -41,6 +41,9 @@ func main() {
 	http.HandleFunc("/likedposts", LikedPostsHandler)
 	http.HandleFunc("/addcomment", AddCommentHandler)
 	http.HandleFunc("/deletepost", DeletePostHandler)
+	http.HandleFunc("/likecomment", LikeCommentHandler)
+	// http.HandleFunc("/dislikecomment", DislikeCommentHandler)
+
 	http.HandleFunc("/it", ItPageHandler)
 
 	fmt.Println("http://localhost:8080/")
@@ -53,14 +56,15 @@ func main() {
 	// }
 	// defer db.Close()
 
-	// // // // statement, _ := db.Prepare("CREATE TABLE comments (id INTEGER PRIMARY KEY AUTOINCREMENT,post_id INTEGER NOT NULL,user_id INTEGER NOT NULL,text TEXT NOT NULL,FOREIGN KEY (post_id) REFERENCES posts(id),FOREIGN KEY (user_id) REFERENCES users(id));")
-	// // // // statement.Exec()
 
-	// _, err = db.Exec("DELETE FROM sessions")
+
+	// _, err = db.Exec("CREATE TABLE comment_reaction (id INTEGER PRIMARY KEY, user_id INTEGER, comment_id INTEGER, reaction TEXT)")
 	// if err != nil {
 	// 	fmt.Println(err)
 	// 	return
 	// }
+
+
 
 }
 
@@ -304,10 +308,16 @@ func SportPageHandler(w http.ResponseWriter, r *http.Request) {
 		var post models.Post
 		err = res.Scan(&post.Id, &post.Title, &post.FullText, &post.Category, &post.Likes, &post.Dislikes, &post.UserId, &post.Abstract)
 		if err != nil {
-			fmt.Println("err1")
-			fmt.Println(err)
-			return
-		}
+            fmt.Println("Error fetching username:", err)
+            return
+        }
+		var username string
+        err = database.QueryRow("SELECT username FROM users WHERE id = ?", post.UserId).Scan(&username)
+        if err != nil {
+            fmt.Println("Error fetching username:", err)
+            return
+        }
+        post.Username = username
 		if strings.Contains(post.Category, "Sport") {
 			posts = append(posts, post)
 		}
@@ -318,29 +328,8 @@ func SportPageHandler(w http.ResponseWriter, r *http.Request) {
 		return i > j
 	})
 
-	var username string
-    cookie, err := r.Cookie("session_id")
-    if err == nil {
-        var userID int64
-        err = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
-        if err == nil {
-            err = database.QueryRow("SELECT username FROM users WHERE id = ?", userID).Scan(&username)
-            if err != nil {
-                fmt.Println(err)
-            }
-        } else {
-            fmt.Println(err)
-        }
-    } else {
-        fmt.Println("Ошибка при получении cookie:", err)
-    }
+	err = tmpl.ExecuteTemplate(w, "sport", posts)
 
-    pageData := models.PageData{
-        Username: username,
-        Posts:    posts,
-    }
-
-    err = tmpl.ExecuteTemplate(w, "sport", pageData)
     if err != nil {
         fmt.Println(err)
         http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -377,6 +366,13 @@ func TrendsPageHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("test")
 			return
 		}
+		var username string
+        err = database.QueryRow("SELECT username FROM users WHERE id = ?", post.UserId).Scan(&username)
+        if err != nil {
+            fmt.Println("Error fetching username:", err)
+            return
+        }
+        post.Username = username
 
 		if strings.Contains(post.Category, "Trends") {
 			posts = append(posts, post)
@@ -426,6 +422,13 @@ func HumorPageHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
+		var username string
+        err = database.QueryRow("SELECT username FROM users WHERE id = ?", post.UserId).Scan(&username)
+        if err != nil {
+            fmt.Println("Error fetching username:", err)
+            return
+        }
+        post.Username = username
 		if strings.Contains(post.Category, "Humor") {
 			posts = append(posts, post)
 		}
@@ -627,6 +630,27 @@ func FirstPageHandler(w http.ResponseWriter, r *http.Request) {
             fmt.Println(err)
             return
         }
+		rows, err := database.Query("SELECT users.username, comment.text FROM comment JOIN users ON comment.user_id = users.id WHERE post_id = ?", post.Id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var comments []models.Comment
+	for rows.Next() {
+		var comment models.Comment
+		err := rows.Scan(&comment.Username, &comment.Text)
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		comments = append(comments, comment)
+	}
+	   commentCount := len(comments)
+	   post.CommentsCount = commentCount
+
         posts = append(posts, post)
     }
 
@@ -650,7 +674,7 @@ func FirstPageHandler(w http.ResponseWriter, r *http.Request) {
     } else {
         fmt.Println("Ошибка при получении cookie:", err)
     }
-
+	
     pageData := models.PageData{
         Username: username,
         Posts:    posts,
@@ -662,6 +686,8 @@ func FirstPageHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
 }
+
+
 
 func LoginHadnler(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("templates/reg.html", "templates/header.html")
@@ -881,7 +907,7 @@ func ExitHandler(w http.ResponseWriter, r *http.Request) {
 	cookie.MaxAge = -1
 	http.SetCookie(w, cookie)
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/login", http.StatusFound)
 
 }
 
@@ -1427,9 +1453,16 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	var username string
+        err = database.QueryRow("SELECT username FROM users WHERE id = ?", post.UserId).Scan(&username)
+        if err != nil {
+            fmt.Println("Error fetching username:", err)
+            return
+        }
+        post.Username = username
 
 	// Загрузка комментариев
-	rows, err := database.Query("SELECT users.username, comment.text FROM comment JOIN users ON comment.user_id = users.id WHERE post_id = ?", post.Id)
+	rows, err := database.Query("SELECT comment.id, users.username, comment.text, comment.likes, comment.dislikes FROM comment JOIN users ON comment.user_id = users.id WHERE post_id = ?", post.Id)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1440,7 +1473,7 @@ func PostPageHandler(w http.ResponseWriter, r *http.Request) {
 	var comments []models.Comment
 	for rows.Next() {
 		var comment models.Comment
-		err := rows.Scan(&comment.Username, &comment.Text)
+		err := rows.Scan(&comment.Id,&comment.Username, &comment.Text, &comment.Likes, &comment.Dislikes)
 		if err != nil {
 			fmt.Println(err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1495,6 +1528,13 @@ func ItPageHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
+		var username string
+        err = database.QueryRow("SELECT username FROM users WHERE id = ?", post.UserId).Scan(&username)
+        if err != nil {
+            fmt.Println("Error fetching username:", err)
+            return
+        }
+        post.Username = username
 		if strings.Contains(post.Category, "IT") {
 			posts = append(posts, post)
 		}
@@ -1511,4 +1551,79 @@ func ItPageHandler(w http.ResponseWriter, r *http.Request) {
         fmt.Println(err)
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
+}
+
+
+
+func LikeCommentHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("here")
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+	commentID := r.FormValue("comment_id")
+	fmt.Println("-------------")
+	fmt.Println(commentID)
+	fmt.Println("-------------")
+	if commentID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "commentID is required"})
+		return
+	}
+
+	database, err := sql.Open("sqlite3", "./forum.db")
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
+	defer database.Close()
+	var userID int64
+	_ = database.QueryRow("SELECT user_id FROM sessions WHERE cookie = ?", cookie.Value).Scan(&userID)
+	var react string
+	_ = database.QueryRow("SELECT reaction FROM comment_reaction WHERE comment_id = ? AND user_id = ?", commentID, userID).Scan(&react)
+	fmt.Println(react)
+
+	if react == "like" {
+		fmt.Println("1")
+		_, _ = database.Exec("UPDATE comment SET likes = likes - 1 WHERE id = ?", commentID)
+		_, _ = database.Exec("DELETE FROM comment_reaction WHERE comment_id = ? AND user_id = ?", commentID, userID)
+	} else if react == "dislike" {
+		fmt.Println("2")
+		_, _ = database.Exec("UPDATE comment SET dislikes = dislikes - 1 WHERE id = ?", commentID)
+		_, err = database.Exec("UPDATE comment_reaction SET reaction = 'like' WHERE comment_id = ? AND user_id = ?", commentID, userID)
+		_, _ = database.Exec("UPDATE comment SET likes = likes + 1 WHERE id = ?", commentID)
+	} else {
+		fmt.Println("3")
+		_, _ = database.Exec("INSERT INTO comment_reaction (user_id, comment_id, reaction) VALUES (?, ?, ?)", userID, commentID, "like")
+		_, _ = database.Exec("UPDATE comment SET likes = likes + 1 WHERE id = ?", commentID)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
+	var likes int
+	err = database.QueryRow("SELECT likes FROM comment WHERE id = ?", commentID).Scan(&likes)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
+	var dislikes int
+	err = database.QueryRow("SELECT dislikes FROM comment WHERE id = ?", commentID).Scan(&dislikes)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]int{"likes": likes, "dislikes": dislikes})
 }
