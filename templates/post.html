@@ -37,22 +37,20 @@
 
         <div class="comments-section">
             <h3>{{ .CommentCount }} Comments  </h3>
-           
             <ul id="comments-list">
                 {{ range .Comments }}
                     <li><strong>{{ .Username }}:</strong> {{ .Text }}</li> 
-                    <button type="button" class="like-button" data-comment-id="{{ .Id }}">
+                    <button type="button" class="like-comment-button" data-comment-id="{{ .Id }}">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAsUlEQVR4nO2SwQnCQBBFH+LBMqxAbMACIgQvgl5zswQrsAhLsAsTPNuD8WIBnhJYmduwJMqSGVDww7/M7L63h4UvzQzIgZEHfAs0QAD21vCNgkuPlvB1BJfuPOEBmHvCn8B4KHzVA5eeLV5f98A/Ve5lGnRRy0rNw4DetCBeWgjCzwvu3oKDp6AFpp6Ck4Z7CBaegmsMtxYUKYI6Ef4AJl2CSh0q1TxLkMi/X3bB/+FdXlQTCqUh2JuTAAAAAElFTkSuQmCC">
                     </button>
-                    <span class="like-count" data-comment-id="{{ .Id }}"> {{ .Likes }} </span>
-                    <button type="button" class="dislike-button" data-comment-id="{{ .Id }}">
+                    <span class="like-count" style="position: relative; left:5px;" data-comment-id="{{ .Id }}"> {{ .Likes }} </span>
+                    <button type="button" class="dislike-comment-button" data-comment-id="{{ .Id }}" style="position: relative; left: 50px;">
                         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAoklEQVR4nO3SMQrCQBRF0QsJrsTCRrIFU7oDGwt3I1gL2UAqqyzF1kIQBIv0go0/VUAGJ2TCf2DhhV8NvNMM/EvIPq5vA7TB27d7AOspQDtivL87MEsFLPG2auCsBgxYqYFGDbyBhRIw4KgGbmrA1MB1LPCcOB79qmHVwNAShzKgjgB7D2AIueBYFkHmnkgOnAJg5wmEyAsoEJQDB6BUjP9eHSR05B+39/uOAAAAAElFTkSuQmCC">
                     </button>
-                    <span class="dislike-count" data-comment-id="{{ .Id }}"> {{ .Dislikes }} </span>
-             
+                    <span class="dislike-count" style="position: relative; left: 55px;" data-comment-id="{{ .Id }}"> {{ .Dislikes }} </span>
                 {{ end }}
-              
             </ul>
+            
             <form id="comment-form" method="post" action="/addcomment">
                 <input type="hidden" name="post_id" value="{{ .Post.Id }}">
                 <textarea name="comment" placeholder="Write a comment..." required></textarea>
@@ -62,4 +60,7 @@
     </div>
 </body>
 </html>
+<script src="/script.js"></script>
+
 {{ end }}
+ 

@@ -27,7 +27,7 @@ iconClose.addEventListener('click', ()=> {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Inline script executed");
+  
 
     const regForm = document.getElementById("reg-form");
     console.log("Registration form:", regForm);
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault();
             if (!this.classList.contains('loading')) {
                 var commentID = this.getAttribute('data-comment-id');
-                sendLikeRequest(commentID, this);
+                sendCommentLikeRequest(commentID, this);
                 this.classList.add('loading');
             }
         });
@@ -177,14 +177,15 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault();
             if (!this.classList.contains('loading')) {
                 var commentID = this.getAttribute('data-comment-id');
-                sendDislikeRequest(commentID, this);
+                sendCommentDislikeRequest(commentID, this);
                 this.classList.add('loading');
             }
         });
     });
 });
 
-function sendLikeRequest(commentID, button) {
+function sendCommentLikeRequest(commentID, button) {
+     
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "/likecomment", true); // Поменяйте путь на ваш роут для лайков комментариев
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -193,6 +194,7 @@ function sendLikeRequest(commentID, button) {
             if (xhr.status === 200) {
                 var response = JSON.parse(xhr.responseText);
                 document.querySelector(`.like-count[data-comment-id='${commentID}']`).innerText = response.likes;
+
                 button.classList.toggle('liked', !button.classList.contains('liked'));
                 document.querySelector(`.dislike-count[data-comment-id='${commentID}']`).innerText = response.dislikes;
 
@@ -206,11 +208,11 @@ function sendLikeRequest(commentID, button) {
             }
             button.classList.remove('loading');
         }
-    };
+    }; 
     xhr.send(`comment_id=${commentID}`);
 }
 
-function sendDislikeRequest(commentID, button) {
+function sendCommentDislikeRequest(commentID, button) {
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "/dislikecomment", true); // Поменяйте путь на ваш роут для дизлайков комментариев
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
