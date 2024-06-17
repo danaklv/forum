@@ -1,0 +1,55 @@
+{{ define "header" }}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <link rel="icon" href="https://icons8.ru/icon/PnGqCiGjfpSQ/people-working-together" type="image/x-icon">
+    <link rel="stylesheet" href="/front/css/style.css">
+    <title>  Forum</title>
+</head>
+<body>
+<header>
+     <a href="/" style="text-decoration: none; color: black;"> <h2 class="logo"> Forum</h2> </a> 
+    <div class="nav">
+        <a href="/"  class="header-link">Home</a>
+        <a href="/login" class="loginBtn" id="loginBtn">Login</a>
+        <a href="/create" class="header-link">Create Post</a>
+    </div>
+
+    {{ if .Username }}
+    <div class="dropdown">
+        <button onclick="myFunction()" class="dropbtn">{{ .Username }}</button>
+        <div id="myDropdown" class="dropdown-content">
+            <a href="/myposts">My posts</a>
+            <a href="/likedposts">Liked Posts</a>
+            <a href="/create">Create Post</a>
+            <a href="/exit">Exit</a>
+        </div>
+    </div>
+    {{ end }}
+</header>
+<script src="/script.js"></script>
+
+<script>
+    function myFunction() {
+        document.getElementById("myDropdown").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+      if (!event.target.matches('.dropbtn')) {
+        var dropdowns = document.getElementsByClassName("dropdown-content");
+        var i;
+        for (i = 0; i < dropdowns.length; i++) {
+          var openDropdown = dropdowns[i];
+          if (openDropdown.classList.contains('show')) {
+            openDropdown.classList.remove('show');
+          }
+        }
+      }
+    }
+    </script>
+
+{{ end }}
